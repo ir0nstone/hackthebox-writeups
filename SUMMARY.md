@@ -9,3 +9,7 @@
 * [Medium](linux/medium/README.md)
   * [Magic](linux/medium/magic.md)
 
+## Challenges
+
+* [Dream Diary: Chapter 1](challenges/dream-diary-chapter-1.md)
+
