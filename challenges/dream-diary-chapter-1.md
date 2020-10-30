@@ -43,7 +43,6 @@ Many of the functions are bloated. If there is a chunk of irrelevant code, I'll 
 
 ```c
 /* Find free chunk index in the list */
-/* Check index isn't used */
 
 /* Input size */
 
