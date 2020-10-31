@@ -11,5 +11,6 @@
 
 ## Challenges
 
-* [Dream Diary: Chapter 1](challenges/dream-diary-chapter-1.md)
+* [Dream Diary: Chapter 1](challenges/dream-diary-chapter-1/README.md)
+  * [Unlink Exploit](challenges/dream-diary-chapter-1/unlink-exploit.md)
 
