@@ -555,31 +555,19 @@ else:
     p = process('127.0.0.1', 5001)
 
 ### Wrapper Functions
-def recv():
-    log.info(p.clean().decode('latin-1'))
+def write(data):
+    if isinstance(data, str):
+        data = data.encode()
 
-def send(text, to_recv=False):
-    p.send(text)
-    if to_recv:
-        recv()
+    p.send(b'\x01' + p8(len(data)) + data)
 
-def write(text):
-    send('\x01')
-    send(chr(len(text)))
-    send(text)
 
-def copy(length, start=0):
-    send('\x02')
-    
-    start = hex(start)[2:].rjust(4, '0')
-    chars = chr(int(start[:2], 16)) + chr(int(start[2:], 16))
+def copy(start=0, length=100):
+    p.send(b'\x02' + p16(start) + p8(length))
 
-    send(chars[::-1])        # little-endian
-
-    send(chr(length))
 
 def read():
-    send('\x03', False)
+    p.send(b'\x03')
     return p.clean(0.5)
 ```
 
