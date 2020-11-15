@@ -8,6 +8,8 @@
   * [Traceback](linux/easy-linux/traceback.md)
 * [Medium](linux/medium/README.md)
   * [Magic](linux/medium/magic.md)
+* [Hard](linux/hard/README.md)
+  * [Intense](linux/hard/intense.md)
 
 ## Challenges
 
