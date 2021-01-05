@@ -13,8 +13,13 @@
 
 ## Challenges
 
-* [Ropme](challenges/ropme.md)
-* [Dream Diary: Chapter 1](challenges/dream-diary-chapter-1/README.md)
-  * [Unlink Exploit](challenges/dream-diary-chapter-1/unlink-exploit.md)
-  * [Chunk Overlap](challenges/dream-diary-chapter-1/chunk-overlap.md)
+* [Web](challenges/web/README.md)
+  * [Looking Glass](challenges/web/looking-glass.md)
+  * [Sanitize](challenges/web/sanitize.md)
+  * [Baby Auth](challenges/web/baby-auth.md)
+* [Pwn](challenges/pwn/README.md)
+  * [Dream Diary: Chapter 1](challenges/pwn/dream-diary-chapter-1/README.md)
+    * [Unlink Exploit](challenges/pwn/dream-diary-chapter-1/unlink-exploit.md)
+    * [Chunk Overlap](challenges/pwn/dream-diary-chapter-1/chunk-overlap.md)
+  * [Ropme](challenges/pwn/ropme.md)
 
