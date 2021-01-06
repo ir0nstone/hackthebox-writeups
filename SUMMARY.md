@@ -17,6 +17,7 @@
   * [Looking Glass](challenges/web/looking-glass.md)
   * [Sanitize](challenges/web/sanitize.md)
   * [Baby Auth](challenges/web/baby-auth.md)
+  * [Baby Website Rick](challenges/web/baby-website-rick.md)
 * [Pwn](challenges/pwn/README.md)
   * [Dream Diary: Chapter 1](challenges/pwn/dream-diary-chapter-1/README.md)
     * [Unlink Exploit](challenges/pwn/dream-diary-chapter-1/unlink-exploit.md)
