@@ -75,7 +75,7 @@ Traceback (most recent call last):
 TypeError: object.__new__(X): X is not a type object (str)
 ```
 
-Here it's throwing an error because X \(`anti_pickle_serum`\) **is not a type object** - so let's make it a class!
+Here it's throwing an error because X \(`anti_pickle_serum`\) **is not a type object** - so let's make it a clas extending from `object`!
 
 ```python
 # [imports]
