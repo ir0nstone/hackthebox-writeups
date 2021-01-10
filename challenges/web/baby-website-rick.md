@@ -75,7 +75,7 @@ Traceback (most recent call last):
 TypeError: object.__new__(X): X is not a type object (str)
 ```
 
-Here it's throwing an error because X \(`anti_pickle_serum`\) **is not a type object** - so let's make it a clas extending from `object`!
+Here it's throwing an error because X \(`anti_pickle_serum`\) **is not a type object** - so let's make it a class extending from `object`!
 
 ```python
 # [imports]
@@ -96,7 +96,7 @@ So the cookie is the pickled form of a dictionary with the key `serum` and the v
 
 ## Exploitation
 
-For an introduction to pickle exploitation, I highly recommend [this blog post](https://davidhamann.de/2020/04/05/exploiting-python-pickle/). Essentially, the `__reduce__` dunder method tells pickle how to deserialize, and to do so it takse a **function** and a **list of parameters**. We can set the function to `os.system` and the parameters to the code to execute!
+For an introduction to pickle exploitation, I highly recommend [this blog post](https://davidhamann.de/2020/04/05/exploiting-python-pickle/). Essentially, the `__reduce__` dunder method tells pickle how to deserialize, and to do so it takes a **function** and a **list of parameters**. We can set the function to `os.system` and the parameters to the code to execute!
 
 ```python
 from base64 import b64encode
