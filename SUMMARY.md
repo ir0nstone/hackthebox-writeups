@@ -2,12 +2,13 @@
 
 * [HackTheBox](README.md)
 
-## Linux Machines <a id="linux"></a>
+## Linux Machines <a href="#linux" id="linux"></a>
 
 * [Easy](linux/easy-linux/README.md)
   * [Traceback](linux/easy-linux/traceback.md)
 * [Medium](linux/medium/README.md)
   * [Magic](linux/medium/magic.md)
+  * [UpDown](linux/medium/updown.md)
 * [Hard](linux/hard/README.md)
   * [Intense](linux/hard/intense.md)
 
@@ -23,4 +24,3 @@
     * [Unlink Exploit](challenges/pwn/dream-diary-chapter-1/unlink-exploit.md)
     * [Chunk Overlap](challenges/pwn/dream-diary-chapter-1/chunk-overlap.md)
   * [Ropme](challenges/pwn/ropme.md)
-

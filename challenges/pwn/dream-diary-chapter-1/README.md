@@ -2,15 +2,15 @@
 
 ## Overview
 
-Dream Diary: Chapter 1 \(known as **DD1**\) was an `insane` pwn challenge. It is one of the few heap challenges on HackTheBox and, while it took a great deal of time to understand, was probably one of the most satisfying challenges I've done.
+Dream Diary: Chapter 1 (known as **DD1**) was an `insane` pwn challenge. It is one of the few heap challenges on HackTheBox and, while it took a great deal of time to understand, was probably one of the most satisfying challenges I've done.
 
-There were two \(main\) ways to solve this challenge: utilising an unlink exploit and overlapping chunks then performing a fastbin attack. I'll detail both of these, but first we'll identify the bug and what it allows us to do.
+There were two (main) ways to solve this challenge: utilising an unlink exploit and overlapping chunks then performing a fastbin attack. I'll detail both of these, but first we'll identify the bug and what it allows us to do.
 
 ## Analysis
 
 Let's have a look at what we can do.
 
-```text
+```
 ironstone@ubuntu:~/Desktop/hackthebox/chapter1$ ./chapter1 
 
 +------------------------------+
@@ -36,7 +36,7 @@ So at first look we can create, edit and delete chunks. Fairly standard heap cha
 Now we'll check out the binary in more detail.
 
 {% hint style="info" %}
-Many of the functions are bloated. If there is a chunk of irrelevant code, I'll just replace it with a comment that explains what it does \(or in the case of canaries just remove altogether\). I'll also remove convoluted multi-step code, so the types may be off, but it's much more readable.
+Many of the functions are bloated. If there is a chunk of irrelevant code, I'll just replace it with a comment that explains what it does (or in the case of canaries just remove altogether). I'll also remove convoluted multi-step code, so the types may be off, but it's much more readable.
 {% endhint %}
 
 #### Allocate
@@ -101,11 +101,11 @@ read(*(void **)(&CHUNKLIST + index * 8), size);
 
 Remember that `strlen()` stops at a **null byte**. If we completely fill up our buffer the first time we allocate, there are **no null bytes there**. Instead, we will continue into the `size` field of the next chunk.
 
-![Chunk 1&apos;s data is right up against Chunk 2&apos;s size field](../../../.gitbook/assets/image%20%2812%29.png)
+![Chunk 1's data is right up against Chunk 2's size field](<../../../.gitbook/assets/image (30).png>)
 
 Provided the `size` field is greater than `0x0` - which is will be - `strlen()` will interpret it as **part of the string**. That only gives us an overflow of one or two bytes.
 
-But what can we do with that? The last 3 bits of the `size` field are taken up by the flags, the important one for this being the `prev_in_use` bit. If it is not set \(i.e. `0`\) then we can use `PREV_SIZE` to calculate the size of the previous chunk. If we overwrite `P` to be `0`, we can fake `PREV_SIZE` as it's [originally part of the previous chunk's data](https://ir0nstone.gitbook.io/notes/types/heap/chunks#allocated-chunks).
+But what can we do with that? The last 3 bits of the `size` field are taken up by the flags, the important one for this being the `prev_in_use` bit. If it is not set (i.e. `0`) then we can use `PREV_SIZE` to calculate the size of the previous chunk. If we overwrite `P` to be `0`, we can fake `PREV_SIZE` as it's [originally part of the previous chunk's data](https://ir0nstone.gitbook.io/notes/types/heap/chunks#allocated-chunks).
 
 How we can utilise this will be detailed in the subpages.
 
@@ -136,4 +136,3 @@ def edit(idx=0, data='a'):
     p.sendlineafter('Index: ', str(idx))
     p.sendlineafter('Data: ', data)
 ```
-
